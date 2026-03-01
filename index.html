@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Fund Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-8 font-sans text-slate-800">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Watch Fund Tracker</h1>
+                <p class="text-slate-500 mt-1">Target Date: End of 2026</p>
+            </div>
+            <div class="flex flex-col items-end">
+                <span id="fileStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+                    Loading data.csv...
+                </span>
+            </div>
+        </div>
+
+        <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="space-y-6 flex flex-col justify-between">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Total Saved</h2>
+                    <p class="text-4xl font-bold text-emerald-600" id="totalSavedText">$0</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-red-600">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Tudor Goal</h2>
+                    <p class="text-2xl font-bold text-slate-800" id="tudorCostText">$0</p>
+                    <div class="w-full bg-slate-100 rounded-full h-2 mt-4">
+                        <div id="tudorProgressBar" class="bg-red-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-blue-600">
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Longines Goal</h2>
+                    <p class="text-2xl font-bold text-slate-800" id="longinesCostText">$0</p>
+                    <div class="w-full bg-slate-100 rounded-full h-2 mt-4">
+                        <div id="longinesProgressBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                <h2 class="text-lg font-bold text-slate-800 mb-6">Progress Visualization</h2>
+                <div class="relative h-72 w-full">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="md:col-span-3 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">Savings Breakdown</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="py-3 px-4 font-semibold text-sm text-slate-500 uppercase">Description (Col A)</th>
+                                <th class="py-3 px-4 font-semibold text-sm text-slate-500 uppercase text-right">Amount Saved (Col B)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody" class="text-slate-700 divide-y divide-slate-100">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let progressChartInstance = null;
+
+        const getNumericValue = (data, rowIndex, colIndex) => {
+            if (data[rowIndex] && data[rowIndex][colIndex] !== undefined && data[rowIndex][colIndex] !== "") {
+                let val = data[rowIndex][colIndex].toString().replace(/[^0-9.-]+/g, "");
+                return parseFloat(val) || 0;
+            }
+            return 0;
+        };
+
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        };
+
+        // Automatically load the CSV on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            Papa.parse('data.csv', {
+                download: true,
+                skipEmptyLines: false,
+                complete: function(results) {
+                    const data = results.data;
+
+                    const totalSaved = getNumericValue(data, 13, 3);   // D14
+                    const tudorCost = getNumericValue(data, 14, 3);    // D15
+                    const longinesCost = getNumericValue(data, 18, 3); // D19
+
+                    updateDashboard(totalSaved, tudorCost, longinesCost, data);
+                    
+                    // Update status badge
+                    const statusBadge = document.getElementById('fileStatus');
+                    statusBadge.innerText = 'Live Data Synced';
+                    statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800';
+                },
+                error: function(error) {
+                    const statusBadge = document.getElementById('fileStatus');
+                    statusBadge.innerText = 'Error loading CSV (See Console)';
+                    statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800';
+                    console.error("PapaParse Error:", error);
+                }
+            });
+        });
+
+        function updateDashboard(totalSaved, tudorCost, longinesCost, fullData) {
+            document.getElementById('dashboard').classList.remove('hidden');
+
+            document.getElementById('totalSavedText').innerText = formatCurrency(totalSaved);
+            document.getElementById('tudorCostText').innerText = formatCurrency(tudorCost);
+            document.getElementById('longinesCostText').innerText = formatCurrency(longinesCost);
+
+            const tudorPercent = Math.min((totalSaved / tudorCost) * 100, 100) || 0;
+            const longinesPercent = Math.min((totalSaved / longinesCost) * 100, 100) || 0;
+            
+            document.getElementById('tudorProgressBar').style.width = `${tudorPercent}%`;
+            document.getElementById('longinesProgressBar').style.width = `${longinesPercent}%`;
+
+            updateChart(totalSaved, tudorCost, longinesCost);
+
+            const tbody = document.getElementById('transactionTableBody');
+            tbody.innerHTML = ''; 
+            
+            for (let i = 0; i < fullData.length; i++) {
+                const desc = fullData[i][0]; 
+                const amt = fullData[i][1];  
+                
+                if (desc && amt && desc.trim() !== "" && amt.trim() !== "") {
+                    if (desc.toLowerCase().includes('description')) continue;
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-3 px-4">${desc}</td>
+                        <td class="py-3 px-4 text-right font-medium text-emerald-600">${formatCurrency(parseFloat(amt.toString().replace(/[^0-9.-]+/g, "")) || 0)}</td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            }
+        }
+
+        function updateChart(totalSaved, tudorCost, longinesCost) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            if (progressChartInstance) {
+                progressChartInstance.destroy();
+            }
+
+            progressChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tudor Goal', 'Longines Goal'],
+                    datasets: [
+                        {
+                            label: 'Current Saved',
+                            data: [totalSaved, totalSaved],
+                            backgroundColor: '#10b981', 
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        },
+                        {
+                            label: 'Target Cost',
+                            data: [tudorCost, longinesCost],
+                            backgroundColor: '#e2e8f0', 
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', 
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { display: false }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
