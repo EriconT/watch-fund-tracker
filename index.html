@@ -50,7 +50,7 @@
                 </div>
                 
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 border-l-4 border-l-red-600 transition-colors duration-200">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tudor Goal</h2>
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tudor Remaining</h2>
                     <p class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="tudorCostText">$0</p>
                     <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4 transition-colors duration-200">
                         <div id="tudorProgressBar" class="bg-red-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -58,7 +58,7 @@
                 </div>
 
                 <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 border-l-4 border-l-blue-600 transition-colors duration-200">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Longines Goal</h2>
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Longines Remaining</h2>
                     <p class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="longinesCostText">$0</p>
                     <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4 transition-colors duration-200">
                         <div id="longinesProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -99,8 +99,8 @@
         const getChartColors = () => {
             const isDark = document.documentElement.classList.contains('dark');
             return {
-                text: isDark ? '#94a3b8' : '#64748b', // slate-400 : slate-500
-                targetBg: isDark ? '#334155' : '#e2e8f0', // slate-700 : slate-200
+                text: isDark ? '#94a3b8' : '#64748b', 
+                targetBg: isDark ? '#334155' : '#e2e8f0', 
             };
         };
 
@@ -126,7 +126,7 @@
         };
 
         const formatCurrency = (amount) => {
-            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
         };
 
         // Automatically load the CSV on page load
@@ -162,9 +162,14 @@
         function updateDashboard(totalSaved, tudorCost, longinesCost, fullData) {
             document.getElementById('dashboard').classList.remove('hidden');
 
+            // Calculate the remaining amounts (preventing negative numbers if you over-save)
+            const tudorRemaining = Math.max(0, tudorCost - totalSaved);
+            const longinesRemaining = Math.max(0, longinesCost - totalSaved);
+
+            // Update the UI text
             document.getElementById('totalSavedText').innerText = formatCurrency(totalSaved);
-            document.getElementById('tudorCostText').innerText = formatCurrency(tudorCost);
-            document.getElementById('longinesCostText').innerText = formatCurrency(longinesCost);
+            document.getElementById('tudorCostText').innerText = formatCurrency(tudorRemaining);
+            document.getElementById('longinesCostText').innerText = formatCurrency(longinesRemaining);
 
             const tudorPercent = Math.min((totalSaved / tudorCost) * 100, 100) || 0;
             const longinesPercent = Math.min((totalSaved / longinesCost) * 100, 100) || 0;
