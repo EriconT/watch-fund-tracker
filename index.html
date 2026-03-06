@@ -36,10 +36,18 @@
                 <p class="text-slate-500 dark:text-slate-400 mt-1">Target Date: End of 2026</p>
             </div>
             <div class="flex flex-col items-end space-y-3">
-                <button id="themeToggle" class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition focus:outline-none" aria-label="Toggle Dark Mode">
-                    <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
+                <div class="flex space-x-2">
+                    <button id="forceSyncBtn" class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition focus:outline-none" aria-label="Force Sync Data">
+                        <svg id="syncIcon" class="w-5 h-5 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </button>
+
+                    <button id="themeToggle" class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition focus:outline-none" aria-label="Toggle Dark Mode">
+                        <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                </div>
 
                 <span id="fileStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 transition-colors duration-200">
                     Loading data.csv...
@@ -117,7 +125,6 @@
             const isDark = html.classList.contains('dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
-            // Update chart colors dynamically if it exists
             if (progressChartInstance) {
                 updateChart(chartDataCache.totalSaved, chartDataCache.tudorCost, chartDataCache.longinesCost);
             }
@@ -135,9 +142,20 @@
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
         };
 
-        // Automatically load the CSV on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            Papa.parse('data.csv', {
+        // The main function to fetch and parse the CSV
+        function fetchAndLoadData() {
+            const statusBadge = document.getElementById('fileStatus');
+            const syncIcon = document.getElementById('syncIcon');
+            
+            // Spin the icon and update badge
+            syncIcon.classList.add('rotate-180');
+            statusBadge.innerText = 'Syncing...';
+            statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 transition-colors duration-200';
+
+            // Cache buster creates a unique URL every time so the browser bypasses its local cache
+            const cacheBuster = new Date().getTime();
+
+            Papa.parse(`data.csv?v=${cacheBuster}`, {
                 download: true,
                 skipEmptyLines: false,
                 complete: function(results) {
@@ -147,32 +165,38 @@
                     const tudorCost = getNumericValue(data, 14, 3);    // D15
                     const longinesCost = getNumericValue(data, 18, 3); // D19
 
-                    // Cache for theme switching
                     chartDataCache = { totalSaved, tudorCost, longinesCost };
 
                     updateDashboard(totalSaved, tudorCost, longinesCost, data);
                     
-                    const statusBadge = document.getElementById('fileStatus');
                     statusBadge.innerText = 'Live Data Synced';
                     statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 transition-colors duration-200';
+                    
+                    // Reset icon spin
+                    setTimeout(() => syncIcon.classList.remove('rotate-180'), 500);
                 },
                 error: function(error) {
-                    const statusBadge = document.getElementById('fileStatus');
                     statusBadge.innerText = 'Error loading CSV';
                     statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 transition-colors duration-200';
                     console.error("PapaParse Error:", error);
+                    
+                    setTimeout(() => syncIcon.classList.remove('rotate-180'), 500);
                 }
             });
-        });
+        }
+
+        // Load data on initial page load
+        document.addEventListener('DOMContentLoaded', fetchAndLoadData);
+
+        // Load data when the sync button is clicked
+        document.getElementById('forceSyncBtn').addEventListener('click', fetchAndLoadData);
 
         function updateDashboard(totalSaved, tudorCost, longinesCost, fullData) {
             document.getElementById('dashboard').classList.remove('hidden');
 
-            // Calculate the remaining amounts (preventing negative numbers if you over-save)
             const tudorRemaining = Math.max(0, tudorCost - totalSaved);
             const longinesRemaining = Math.max(0, longinesCost - totalSaved);
 
-            // Update the UI text
             document.getElementById('totalSavedText').innerText = formatCurrency(totalSaved);
             document.getElementById('tudorCostText').innerText = formatCurrency(tudorRemaining);
             document.getElementById('longinesCostText').innerText = formatCurrency(longinesRemaining);
