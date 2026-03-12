@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Watch Fund Tracker</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Watch Fund">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen p-8 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-200">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center transition-colors duration-200">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Watch Fund Tracker</h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-1">Target Date: End of 2026</p>
+            </div>
+            <div class="flex flex-col items-end space-y-3">
+                <div class="flex space-x-2">
+                    <button id="forceSyncBtn" class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition focus:outline-none" aria-label="Force Sync Data">
+                        <svg id="syncIcon" class="w-5 h-5 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </button>
+
+                    <button id="themeToggle" class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition focus:outline-none" aria-label="Toggle Dark Mode">
+                        <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                </div>
+
+                <span id="fileStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 transition-colors duration-200">
+                    Loading data.csv...
+                </span>
+            </div>
+        </div>
+
+        <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="space-y-6 flex flex-col justify-between">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Total Saved</h2>
+                    <p class="text-4xl font-bold text-emerald-600 dark:text-emerald-500" id="totalSavedText">$0</p>
+                </div>
+                
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 border-l-4 border-l-red-600 transition-colors duration-200">
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tudor Remaining</h2>
+                    <p class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="tudorCostText">$0</p>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4 transition-colors duration-200">
+                        <div id="tudorProgressBar" class="bg-red-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 border-l-4 border-l-blue-600 transition-colors duration-200">
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Longines Remaining</h2>
+                    <p class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="longinesCostText">$0</p>
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4 transition-colors duration-200">
+                        <div id="longinesProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center transition-colors duration-200">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">Progress Visualization</h2>
+                <div class="relative h-72 w-full">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Savings Breakdown</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 dark:border-slate-700 transition-colors duration-200">
+                                <th class="py-3 px-4 font-semibold text-sm text-slate-500 dark:text-slate-400 uppercase">Description (Col A)</th>
+                                <th class="py-3 px-4 font-semibold text-sm text-slate-500 dark:text-slate-400 uppercase text-right">Amount Saved (Col B)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody" class="text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800 transition-colors duration-200">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let progressChartInstance = null;
+        let chartDataCache = { totalSaved: 0, tudorCost: 0, longinesCost: 0 };
+
+        // Helper: Get colors for Chart based on current theme
+        const getChartColors = () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                text: isDark ? '#94a3b8' : '#64748b', 
+                targetBg: isDark ? '#334155' : '#e2e8f0', 
+            };
+        };
+
+        // Theme Toggle Logic
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            if (progressChartInstance) {
+                updateChart(chartDataCache.totalSaved, chartDataCache.tudorCost, chartDataCache.longinesCost);
+            }
+        });
+
+        const getNumericValue = (data, rowIndex, colIndex) => {
+            if (data[rowIndex] && data[rowIndex][colIndex] !== undefined && data[rowIndex][colIndex] !== "") {
+                let val = data[rowIndex][colIndex].toString().replace(/[^0-9.-]+/g, "");
+                return parseFloat(val) || 0;
+            }
+            return 0;
+        };
+
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
+        };
+
+        // The main function to fetch and parse the CSV
+        function fetchAndLoadData() {
+            const statusBadge = document.getElementById('fileStatus');
+            const syncIcon = document.getElementById('syncIcon');
+            
+            // Spin the icon and update badge
+            syncIcon.classList.add('rotate-180');
+            statusBadge.innerText = 'Syncing...';
+            statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 transition-colors duration-200';
+
+            // Cache buster creates a unique URL every time so the browser bypasses its local cache
+            const cacheBuster = new Date().getTime();
+
+            Papa.parse(`data.csv?v=${cacheBuster}`, {
+                download: true,
+                skipEmptyLines: false,
+                complete: function(results) {
+                    const data = results.data;
+
+                    const totalSaved = getNumericValue(data, 13, 3);   // D14
+                    const tudorCost = getNumericValue(data, 14, 3);    // D15
+                    const longinesCost = getNumericValue(data, 18, 3); // D19
+
+                    chartDataCache = { totalSaved, tudorCost, longinesCost };
+
+                    updateDashboard(totalSaved, tudorCost, longinesCost, data);
+                    
+                    statusBadge.innerText = 'Live Data Synced';
+                    statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 transition-colors duration-200';
+                    
+                    // Reset icon spin
+                    setTimeout(() => syncIcon.classList.remove('rotate-180'), 500);
+                },
+                error: function(error) {
+                    statusBadge.innerText = 'Error loading CSV';
+                    statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 transition-colors duration-200';
+                    console.error("PapaParse Error:", error);
+                    
+                    setTimeout(() => syncIcon.classList.remove('rotate-180'), 500);
+                }
+            });
+        }
+
+        // Load data on initial page load
+        document.addEventListener('DOMContentLoaded', fetchAndLoadData);
+
+        // Load data when the sync button is clicked
+        document.getElementById('forceSyncBtn').addEventListener('click', fetchAndLoadData);
+
+        function updateDashboard(totalSaved, tudorCost, longinesCost, fullData) {
+            document.getElementById('dashboard').classList.remove('hidden');
+
+            const tudorRemaining = Math.max(0, tudorCost - totalSaved);
+            const longinesRemaining = Math.max(0, longinesCost - totalSaved);
+
+            document.getElementById('totalSavedText').innerText = formatCurrency(totalSaved);
+            document.getElementById('tudorCostText').innerText = formatCurrency(tudorRemaining);
+            document.getElementById('longinesCostText').innerText = formatCurrency(longinesRemaining);
+
+            const tudorPercent = Math.min((totalSaved / tudorCost) * 100, 100) || 0;
+            const longinesPercent = Math.min((totalSaved / longinesCost) * 100, 100) || 0;
+            
+            document.getElementById('tudorProgressBar').style.width = `${tudorPercent}%`;
+            document.getElementById('longinesProgressBar').style.width = `${longinesPercent}%`;
+
+            updateChart(totalSaved, tudorCost, longinesCost);
+
+            const tbody = document.getElementById('transactionTableBody');
+            tbody.innerHTML = ''; 
+            
+            for (let i = 0; i < fullData.length; i++) {
+                const desc = fullData[i][0]; 
+                const amt = fullData[i][1];  
+                
+                if (desc && amt && desc.trim() !== "" && amt.trim() !== "") {
+                    if (desc.toLowerCase().includes('description')) continue;
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-3 px-4">${desc}</td>
+                        <td class="py-3 px-4 text-right font-medium text-emerald-600 dark:text-emerald-500">${formatCurrency(parseFloat(amt.toString().replace(/[^0-9.-]+/g, "")) || 0)}</td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            }
+        }
+
+        function updateChart(totalSaved, tudorCost, longinesCost) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const colors = getChartColors();
+            
+            if (progressChartInstance) {
+                progressChartInstance.destroy();
+            }
+
+            Chart.defaults.color = colors.text;
+
+            progressChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tudor Goal', 'Longines Goal'],
+                    datasets: [
+                        {
+                            label: 'Current Saved',
+                            data: [totalSaved, totalSaved],
+                            backgroundColor: '#10b981', 
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        },
+                        {
+                            label: 'Target Cost',
+                            data: [tudorCost, longinesCost],
+                            backgroundColor: colors.targetBg, 
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', 
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { display: false },
+                            ticks: { color: colors.text }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: colors.text }
+                        }
+                    },
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: colors.text }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

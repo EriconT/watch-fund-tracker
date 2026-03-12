@@ -8,37 +8,38 @@ This app is designed to be completely private, easy to maintain, and installable
 
 * **Dynamic Visualization:** Live-updating progress bars and a horizontal bar chart comparing current savings against target costs.
 * **Remaining Balances:** Automatically calculates and displays the exact dollar amount still needed to reach each watch goal.
-* **Manual Sync (Cache-Busting):** A built-in "force sync" button that forces the browser to fetch the absolute latest `.csv` data from the repository, completely bypassing aggressive mobile browser caching.
+* **In-App Management:** Add, edit, and delete savings entries directly from the web interface without needing to touch a spreadsheet.
+* **Cloud Sync:** Uses a Google Sheets backend via Apps Script to ensure data is always instantly synced and protected against aggressive mobile browser caching.
 * **Dark Mode:** A built-in theme toggle that automatically adapts to your system preferences and saves your choice for future visits.
 
 ## 🏗️ How It's Constructed
 
-The tracker is built with a minimalist, front-end-only architecture. There is no database or backend server. Everything runs directly in the browser.
+The tracker is built with a minimalist architecture using a serverless backend.
 
 * **Core Structure:** A single `index.html` file handles the entire layout, logic, and theme toggling.
-* **Data Storage:** All savings data is stored in a simple, local `data.csv` file.
+* **Data Storage:** All savings data is stored remotely in a **Google Sheet**.
+* **Backend API:** A custom **Google Apps Script** acts as a REST API, handling `GET` requests to load data and `POST` requests to modify the sheet.
 * **Styling:** [Tailwind CSS](https://tailwindcss.com/) (via CDN) provides a modern, responsive UI.
-* **Data Parsing:** [PapaParse](https://www.papaparse.com/) reads the `data.csv` file dynamically when the page loads or when the sync button is pressed.
 * **Visualization:** [Chart.js](https://www.chartjs.org/) renders the dynamic horizontal bar chart.
-* **Hosting:** The app is hosted for free using **GitHub Pages**.
+* **Hosting:** The frontend app is hosted for free using **GitHub Pages**.
 
 ## ⚙️ Folder Structure
 
-The repository only requires three files to function:
-- `index.html` - The main application code.
-- `data.csv` - The financial data source.
+The frontend repository only requires two files to function:
+- `index.html` - The main application code and API fetching logic.
 - `apple-touch-icon.png` - The custom icon for the iOS Home Screen.
 
 ## 🔄 How It's Maintained
 
-Because the app is hosted on GitHub Pages and fetches the CSV file on load, updating the live website only requires editing the local spreadsheet. 
+Because the app is connected to a live Google Sheet backend via Apps Script, you no longer need to edit local files or make git commits to update your savings.
 
 **To update the savings progress:**
-1. Open `data.csv` locally and add a new row detailing the source of the funds (Column A) and the amount saved (Column B).
-2. Save the file.
-3. Open **GitHub Desktop**, write a brief commit summary (e.g., "Added freelance gig allocation"), and click **Commit to main**.
-4. Click **Push origin** to send the changes to GitHub.
-5. Open the app on your phone or browser and tap the **Sync Button** (the circular arrow icon in the top right) to instantly pull the fresh data.
+1. Open the app on your phone or browser.
+2. Scroll down to the **Add New Savings Entry** section.
+3. Enter a description and an amount, then click **Add Funds**.
+4. The app will immediately post the data to Google Sheets, recalculate your totals, and automatically refresh the dashboard.
+
+Alternatively, you can edit or delete past entries directly from the app by clicking the pencil or trash can icons in the Savings Breakdown table. You can also edit the Google Sheet manually if you prefer.
 
 ## 📱 iOS Web App Integration
 
