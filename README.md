@@ -1,6 +1,6 @@
 # Watch Fund Tracker ⌚️
 
-A lightweight, serverless web application designed to track and visualize savings progress toward a specific watch goal (a Tudor) with a target completion date by the end of 2026. 
+A lightweight, serverless web application designed to track and visualize savings progress toward two Tudor watch goals (Tudor 1926 and Tudor Black Bay 58 GMT) with a target completion date by the end of 2026. 
 
 This app is designed to be completely private, easy to maintain, and installable as a native-feeling iOS web app on an iPhone.
 

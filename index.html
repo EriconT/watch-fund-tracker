@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>On The Way To A Tudor 1926</title>
+    <title>On The Way To A Tudor</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Tudor 1926">
+    <meta name="apple-mobile-web-app-title" content="Tudor Tracker">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="icon" type="image/png" href="apple-touch-icon.png">
 
@@ -32,12 +32,12 @@
         
         <!-- Header Image Banner -->
         <div class="w-full aspect-video overflow-hidden rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-            <img src="tudor.jpg" alt="Tudor 1926" class="w-full h-full object-cover object-center">
+            <img src="tudor.jpg" alt="Tudor" class="w-full h-full object-cover object-center">
         </div>
 
         <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center transition-colors duration-200">
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">On The Way To A Tudor 1926</h1>
+                <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">On The Way To A Tudor</h1>
                 <p class="text-slate-500 dark:text-slate-400 mt-1">Target Date: End of 2026</p>
             </div>
             <div class="flex flex-col items-end space-y-3">
@@ -60,22 +60,30 @@
             </div>
         </div>
 
-        <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200 flex flex-col justify-center">
                 <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Total Saved</h2>
-                <p class="text-5xl font-bold text-emerald-600 dark:text-emerald-500" id="totalSavedText">$0</p>
+                <p class="text-4xl font-bold text-emerald-600 dark:text-emerald-500" id="totalSavedText">$0</p>
             </div>
             
             <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 border-l-4 border-l-red-600 transition-colors duration-200 flex flex-col justify-center">
-                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Remaining</h2>
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tudor 1926 Remaining</h2>
                 <p class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="tudorCostText">$0</p>
                 <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4 transition-colors duration-200">
                     <div id="tudorProgressBar" class="bg-red-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
 
-            <div class="md:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center transition-colors duration-200">
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 border-l-4 border-l-blue-600 transition-colors duration-200 flex flex-col justify-center">
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">BB58 GMT Remaining</h2>
+                <p class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="gmtCostText">$0</p>
+                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mt-4 transition-colors duration-200">
+                    <div id="gmtProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center transition-colors duration-200">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">Progress Visualization</h2>
                 <div class="relative h-72 w-full">
                     <canvas id="progressChart"></canvas>
@@ -83,7 +91,7 @@
             </div>
             
             <!-- Adding the form UI for new transactions -->
-            <div class="md:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Add New Savings Entry</h2>
                 <form id="addTransactionForm" class="flex flex-col md:flex-row gap-4 items-end">
                     <div class="w-full md:w-1/2">
@@ -106,7 +114,7 @@
                 </form>
             </div>
 
-            <div class="md:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Savings Breakdown</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -164,7 +172,7 @@
 
     <script>
         let progressChartInstance = null;
-        let chartDataCache = { totalSaved: 0, tudorCost: 0 };
+        let chartDataCache = { totalSaved: 0, tudorCost: 0, gmtCost: 0 };
         let currentEditRowIndex = null;
 
         // Helper: Get colors for Chart based on current theme
@@ -184,7 +192,7 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
             if (progressChartInstance) {
-                updateChart(chartDataCache.totalSaved, chartDataCache.tudorCost);
+                updateChart(chartDataCache.totalSaved, chartDataCache.tudorCost, chartDataCache.gmtCost);
             }
         });
 
@@ -220,14 +228,20 @@
                 
                 // Parse values from JSON summary (removing any dollar signs/commas if they still exist)
                 const totalSavedStr = returnData.summary.totalSaved.toString().replace(/[^0-9.-]+/g, "");
-                const tudorCostStr = returnData.summary.tudorCost.toString().replace(/[^0-9.-]+/g, "");
+                const tudorCostStr = returnData.summary.tudorCost ? returnData.summary.tudorCost.toString().replace(/[^0-9.-]+/g, "") : "2550";
+                const gmtCostStr = returnData.summary.gmtCost ? returnData.summary.gmtCost.toString().replace(/[^0-9.-]+/g, "") : "5650";
 
                 const totalSaved = parseFloat(totalSavedStr) || 0;
-                const tudorCost = parseFloat(tudorCostStr) || 0;
+                let tudorCost = parseFloat(tudorCostStr) || 2550;
+                let gmtCost = parseFloat(gmtCostStr) || 5650;
 
-                chartDataCache = { totalSaved, tudorCost };
+                // Ensure non-zero fallback
+                if (tudorCost === 0) tudorCost = 2550;
+                if (gmtCost === 0) gmtCost = 5650;
 
-                updateDashboard(totalSaved, tudorCost, returnData.transactions);
+                chartDataCache = { totalSaved, tudorCost, gmtCost };
+
+                updateDashboard(totalSaved, tudorCost, gmtCost, returnData.transactions);
                 
                 statusBadge.innerText = 'Live Data Synced';
                 statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 transition-colors duration-200';
@@ -411,19 +425,23 @@
         // Load data when the sync button is clicked
         document.getElementById('forceSyncBtn').addEventListener('click', fetchAndLoadData);
 
-        function updateDashboard(totalSaved, tudorCost, fullData) {
+        function updateDashboard(totalSaved, tudorCost, gmtCost, fullData) {
             document.getElementById('dashboard').classList.remove('hidden');
 
             const tudorRemaining = Math.max(0, tudorCost - totalSaved);
+            const gmtRemaining = Math.max(0, gmtCost - totalSaved);
 
             document.getElementById('totalSavedText').innerText = formatCurrency(totalSaved);
             document.getElementById('tudorCostText').innerText = formatCurrency(tudorRemaining);
+            document.getElementById('gmtCostText').innerText = formatCurrency(gmtRemaining);
 
             const tudorPercent = Math.min((totalSaved / tudorCost) * 100, 100) || 0;
+            const gmtPercent = Math.min((totalSaved / gmtCost) * 100, 100) || 0;
             
             document.getElementById('tudorProgressBar').style.width = `${tudorPercent}%`;
+            document.getElementById('gmtProgressBar').style.width = `${gmtPercent}%`;
 
-            updateChart(totalSaved, tudorCost);
+            updateChart(totalSaved, tudorCost, gmtCost);
 
             const tbody = document.getElementById('transactionTableBody');
             tbody.innerHTML = ''; 
@@ -453,7 +471,7 @@
             }
         }
 
-        function updateChart(totalSaved, tudorCost) {
+        function updateChart(totalSaved, tudorCost, gmtCost) {
             const ctx = document.getElementById('progressChart').getContext('2d');
             const colors = getChartColors();
             
@@ -466,18 +484,18 @@
             progressChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Tudor Goal'],
+                    labels: ['Tudor 1926', 'Black Bay 58 GMT'],
                     datasets: [
                         {
                             label: 'Current Saved',
-                            data: [totalSaved],
+                            data: [totalSaved, totalSaved],
                             backgroundColor: '#10b981', 
                             borderRadius: 6,
                             barPercentage: 0.6
                         },
                         {
                             label: 'Target Cost',
-                            data: [tudorCost],
+                            data: [tudorCost, gmtCost],
                             backgroundColor: colors.targetBg, 
                             borderRadius: 6,
                             barPercentage: 0.6
