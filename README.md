@@ -23,12 +23,26 @@ The tracker is built with a minimalist architecture using a serverless backend.
 * **Visualization:** [Chart.js](https://www.chartjs.org/) renders the dynamic horizontal bar chart.
 * **Hosting:** The frontend app is hosted for free using **GitHub Pages**.
 
+## 🔒 Passphrase Protection
+
+The Apps Script URL is visible in `index.html`, so the script itself checks a passphrase before reading or changing anything. The app asks for it once per device and remembers it in that browser. If the passphrase is wrong or changes, the app asks again.
+
+**One-time setup in the Apps Script editor:**
+1. In the existing script file, rename `doGet` to `handleGet` and `doPost` to `handlePost`.
+2. Add a new script file and paste in [`apps-script/Auth.gs`](apps-script/Auth.gs).
+3. **Project Settings → Script Properties →** add a property named `PASSPHRASE` with your passphrase. It lives only there, never in this repo.
+4. **Deploy → Manage deployments →** edit the existing deployment, set **Version** to *New version*, and click **Deploy**. Don't create a new deployment, because that would change the URL.
+
+To change the passphrase, edit the script property. Every device will be asked for the new one on its next sync.
+
 ## ⚙️ Folder Structure
 
 The frontend repository only requires three files to function:
 - `index.html` - The main application code and API fetching logic.
 - `apple-touch-icon.png` - The custom icon for the iOS Home Screen.
 - `tudor.jpg` - The banner image at the top of the page.
+
+`apps-script/Auth.gs` is not served by the site. It's a copy of the passphrase check that runs in Google Apps Script.
 
 ## 🔄 How It's Maintained
 

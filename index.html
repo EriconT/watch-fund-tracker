@@ -215,6 +215,52 @@
 
         const WEB_APP_URL ='https://script.google.com/macros/s/AKfycbyKnhktly5WvWrnxCEaQqh3L_exOwDX8jK9j8X4-U1SWDY0kJiR-BUOX69UQupt1k3i/exec';
 
+        // The Apps Script only answers requests that carry the right passphrase (see
+        // apps-script/Auth.gs). The passphrase is asked for once per device and kept in
+        // this browser's storage; it is never part of the page source.
+        const PASSPHRASE_STORAGE_KEY = 'watchTrackerPassphrase';
+
+        function getStoredPassphrase() {
+            try { return localStorage.getItem(PASSPHRASE_STORAGE_KEY) || ''; } catch { return ''; }
+        }
+
+        function storePassphrase(value) {
+            try {
+                if (value) localStorage.setItem(PASSPHRASE_STORAGE_KEY, value);
+                else localStorage.removeItem(PASSPHRASE_STORAGE_KEY);
+            } catch { /* storage unavailable: the passphrase is asked for again next time */ }
+        }
+
+        // Every call (reads included) is a POST, so the passphrase travels in the
+        // request body rather than in the URL.
+        async function callApi(payload) {
+            let passphrase = getStoredPassphrase();
+            for (let attempt = 0; attempt < 3; attempt++) {
+                if (!passphrase) {
+                    const message = attempt === 0 ? 'Enter your passphrase:' : 'Wrong passphrase. Try again:';
+                    passphrase = (prompt(message) || '').trim();
+                    if (!passphrase) throw new Error('No passphrase entered');
+                }
+
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Apps Script requires this simple content type for CORS
+                    body: JSON.stringify({ ...payload, passphrase })
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const result = await response.json();
+
+                if (result.status === 'unauthorized') {
+                    storePassphrase('');
+                    passphrase = '';
+                    continue;
+                }
+                storePassphrase(passphrase);
+                return result;
+            }
+            throw new Error('Wrong passphrase');
+        }
+
         // The main function to fetch data from the Google Apps Script Web App
         async function fetchAndLoadData() {
             const statusBadge = document.getElementById('fileStatus');
@@ -226,10 +272,7 @@
             statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 transition-colors duration-200';
 
             try {
-                const response = await fetch(WEB_APP_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const returnData = await response.json();
+                const returnData = await callApi({ action: 'read' });
                 
                 // Parse values from JSON summary (removing any dollar signs/commas if they still exist)
                 // The sheet's prices win; the defaults are used only if a price is missing or zero.
@@ -245,7 +288,7 @@
                 statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 transition-colors duration-200';
                 
             } catch (error) {
-                statusBadge.innerText = 'Error loading data';
+                statusBadge.innerText = /passphrase/i.test(error.message) ? 'Passphrase needed (tap sync)' : 'Error loading data';
                 statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 transition-colors duration-200';
                 console.error("Fetch Error:", error);
             } finally {
@@ -280,13 +323,7 @@
             statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 transition-colors duration-200';
 
             try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Apps Script requires this simple content type for CORS
-                    body: JSON.stringify({ description: description, amount: amount })
-                });
-
-                const result = await response.json();
+                const result = await callApi({ description: description, amount: amount });
 
                 if (result.status === 'success') {
                     // Clear form
@@ -317,9 +354,7 @@
         // hold a different entry. Re-read the sheet and make sure the row still holds the
         // entry the user clicked before changing anything.
         async function rowStillMatches(rowIndex, desc, amt) {
-            const response = await fetch(WEB_APP_URL);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
+            const data = await callApi({ action: 'read' });
             const current = (data.transactions || []).find(t => Number(t.row) === Number(rowIndex));
             return Boolean(current)
                 && String(current.description ?? '') === String(desc)
@@ -349,13 +384,7 @@
                     return;
                 }
 
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'delete', rowIndex: rowIndex })
-                });
-
-                const result = await response.json();
+                const result = await callApi({ action: 'delete', rowIndex: rowIndex });
                 if (result.status === 'success') {
                     fetchAndLoadData();
                 } else {
@@ -434,13 +463,7 @@
                     return;
                 }
 
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'edit', rowIndex: currentEditRowIndex, description: newDesc, amount: newAmt })
-                });
-
-                const result = await response.json();
+                const result = await callApi({ action: 'edit', rowIndex: currentEditRowIndex, description: newDesc, amount: newAmt });
                 if (result.status === 'success') {
                     document.getElementById('editModal').classList.add('hidden');
                     currentEditRowIndex = null;
