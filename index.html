@@ -174,6 +174,7 @@
         let progressChartInstance = null;
         let chartDataCache = { totalSaved: 0, tudorCost: 0, gmtCost: 0 };
         let currentEditRowIndex = null;
+        let currentEditOriginal = null;
 
         // Helper: Get colors for Chart based on current theme
         const getChartColors = () => {
@@ -312,18 +313,45 @@
             }
         });
 
+        const parseAmount = (value) => parseFloat(String(value ?? '').replace(/[^0-9.-]+/g, "")) || 0;
+
+        // Edits and deletes target a spreadsheet row number. If the sheet changed since
+        // the table was loaded (edited by hand, or from another device), that row may now
+        // hold a different entry. Re-read the sheet and make sure the row still holds the
+        // entry the user clicked before changing anything.
+        async function rowStillMatches(rowIndex, desc, amt) {
+            const response = await fetch(WEB_APP_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            const current = (data.transactions || []).find(t => Number(t.row) === Number(rowIndex));
+            return Boolean(current)
+                && String(current.description ?? '') === String(desc)
+                && parseAmount(current.amount) === parseAmount(amt);
+        }
+
+        function reportStaleRow() {
+            alert('This entry changed in the spreadsheet since the page loaded, so nothing was changed. The list has been refreshed; please try again.');
+            fetchAndLoadData();
+        }
+
         // Handle Delete Transaction
-        async function deleteTransaction(rowIndex) {
+        async function deleteTransaction(rowIndex, desc, amt) {
             if (!confirm("Are you sure you want to delete this specific transaction?")) return;
 
             const statusBadge = document.getElementById('fileStatus');
             const syncIcon = document.getElementById('syncIcon');
-            
+
             statusBadge.innerText = 'Deleting...';
             statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 transition-colors duration-200';
             syncIcon.classList.add('rotate-180');
 
             try {
+                if (!(await rowStillMatches(rowIndex, desc, amt))) {
+                    syncIcon.classList.remove('rotate-180');
+                    reportStaleRow();
+                    return;
+                }
+
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -346,10 +374,11 @@
         // Handle Edit Transaction (Open Modal)
         function editTransaction(rowIndex, oldDesc, oldAmt) {
             currentEditRowIndex = rowIndex;
-            
+            currentEditOriginal = { desc: oldDesc, amt: oldAmt };
+
             const editDescInput = document.getElementById('editDescInput');
             const editAmountInput = document.getElementById('editAmountInput');
-            const parsedOldAmt = parseFloat(oldAmt.toString().replace(/[^0-9.-]+/g, "")) || 0;
+            const parsedOldAmt = parseAmount(oldAmt);
 
             editDescInput.value = oldDesc;
             editAmountInput.value = parsedOldAmt.toFixed(2); // Keep formatted to 2 decimals for input
@@ -391,6 +420,14 @@
             syncIcon.classList.add('rotate-180');
 
             try {
+                if (!(await rowStillMatches(currentEditRowIndex, currentEditOriginal.desc, currentEditOriginal.amt))) {
+                    document.getElementById('editModal').classList.add('hidden');
+                    currentEditRowIndex = null;
+                    syncIcon.classList.remove('rotate-180');
+                    reportStaleRow();
+                    return;
+                }
+
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
