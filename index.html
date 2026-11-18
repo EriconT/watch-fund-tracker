@@ -241,7 +241,7 @@
 
                 chartDataCache = { totalSaved, tudorCost, gmtCost };
 
-                updateDashboard(totalSaved, tudorCost, gmtCost, returnData.transactions);
+                updateDashboard(totalSaved, tudorCost, gmtCost, returnData.transactions || []);
                 
                 statusBadge.innerText = 'Live Data Synced';
                 statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 transition-colors duration-200';
@@ -449,24 +449,30 @@
             // Now fullData is the transactions array of objects from JSON
             for (let i = 0; i < fullData.length; i++) {
                 const rowIndex = fullData[i].row; // Get exact spreadsheet row number
-                const desc = fullData[i].description; 
-                const amt = fullData[i].amount;  
+                const desc = String(fullData[i].description ?? '');
+                const amt = fullData[i].amount ?? 0;
                 
                 const formattedAmt = formatCurrency(parseFloat(amt.toString().replace(/[^0-9.-]+/g, "")) || 0);
 
+                // Static markup only: sheet values are inserted below as plain text,
+                // so descriptions containing quotes, < or \ can't break the page.
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td class="py-3 px-4">${desc}</td>
-                    <td class="py-3 px-4 text-right font-medium text-emerald-600 dark:text-emerald-500">${formattedAmt}</td>
+                    <td class="py-3 px-4" data-cell="desc"></td>
+                    <td class="py-3 px-4 text-right font-medium text-emerald-600 dark:text-emerald-500" data-cell="amount"></td>
                     <td class="py-3 px-4 text-right space-x-2">
-                        <button onclick="editTransaction(${rowIndex}, '${desc.replace(/'/g, "\\'")}', '${amt}')" class="text-slate-400 hover:text-blue-500 transition-colors" title="Edit">
+                        <button type="button" data-action="edit" class="text-slate-400 hover:text-blue-500 transition-colors" title="Edit">
                             <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </button>
-                        <button onclick="deleteTransaction(${rowIndex})" class="text-slate-400 hover:text-red-500 transition-colors" title="Delete">
+                        <button type="button" data-action="delete" class="text-slate-400 hover:text-red-500 transition-colors" title="Delete">
                             <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </td>
                 `;
+                row.querySelector('[data-cell="desc"]').textContent = desc;
+                row.querySelector('[data-cell="amount"]').textContent = formattedAmt;
+                row.querySelector('[data-action="edit"]').addEventListener('click', () => editTransaction(rowIndex, desc, amt));
+                row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteTransaction(rowIndex, desc, amt));
                 tbody.appendChild(row);
             }
         }
