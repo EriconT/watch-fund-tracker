@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>On The Way To A Tudor</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
             darkMode: 'class',
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.min.js"></script>
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -26,7 +26,7 @@
         }
     </script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 min-h-screen p-8 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen p-4 md:p-8 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-200">
 
     <div class="max-w-5xl mx-auto space-y-8">
         
@@ -35,7 +35,7 @@
             <img src="tudor.jpg" alt="Tudor" class="w-full h-full object-cover object-center">
         </div>
 
-        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center transition-colors duration-200">
+        <div class="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center transition-colors duration-200">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">On The Way To A Tudor</h1>
                 <p class="text-slate-500 dark:text-slate-400 mt-1">Target Date: End of 2026</p>
@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center transition-colors duration-200">
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center transition-colors duration-200">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">Progress Visualization</h2>
                 <div class="relative h-72 w-full">
                     <canvas id="progressChart"></canvas>
@@ -91,7 +91,7 @@
             </div>
             
             <!-- Adding the form UI for new transactions -->
-            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Add New Savings Entry</h2>
                 <form id="addTransactionForm" class="flex flex-col md:flex-row gap-4 items-end">
                     <div class="w-full md:w-1/2">
@@ -114,7 +114,7 @@
                 </form>
             </div>
 
-            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+            <div class="md:col-span-3 bg-white dark:bg-slate-900 p-5 md:p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Savings Breakdown</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -137,7 +137,7 @@
     <div id="editModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background overlay -->
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div id="editModalBackdrop" class="fixed inset-0 transition-opacity" aria-hidden="true">
                 <div class="absolute inset-0 bg-slate-900/75 dark:bg-slate-950/80 backdrop-blur-sm"></div>
             </div>
 
@@ -367,6 +367,7 @@
             } catch (error) {
                 console.error("Delete Error:", error);
                 statusBadge.innerText = 'Delete Failed';
+                statusBadge.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 transition-colors duration-200';
                 setTimeout(() => syncIcon.classList.remove('rotate-180'), 500);
             }
         }
@@ -386,10 +387,18 @@
             document.getElementById('editModal').classList.remove('hidden');
         }
 
-        // Close Edit Modal
-        document.getElementById('closeEditModalBtn').addEventListener('click', () => {
+        // Close Edit Modal (Cancel button, click outside the panel, or Escape)
+        function closeEditModal() {
             document.getElementById('editModal').classList.add('hidden');
             currentEditRowIndex = null;
+            currentEditOriginal = null;
+        }
+        document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+        document.getElementById('editModalBackdrop').addEventListener('click', closeEditModal);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !document.getElementById('editModal').classList.contains('hidden')) {
+                closeEditModal();
+            }
         });
 
         // Handle Edit Form Submit
