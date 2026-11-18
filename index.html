@@ -209,7 +209,11 @@
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
         };
 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyKnhktly5WvWrnxCEaQqh3L_exOwDX8jK9j8X4-U1SWDY0kJiR-BUOX69UQupt1k3i/exec';
+        // Watch prices used when the sheet doesn't provide one.
+        const DEFAULT_TUDOR_1926_PRICE = 2550;
+        const DEFAULT_BB58_GMT_PRICE = 5650;
+
+        const WEB_APP_URL ='https://script.google.com/macros/s/AKfycbyKnhktly5WvWrnxCEaQqh3L_exOwDX8jK9j8X4-U1SWDY0kJiR-BUOX69UQupt1k3i/exec';
 
         // The main function to fetch data from the Google Apps Script Web App
         async function fetchAndLoadData() {
@@ -228,17 +232,10 @@
                 const returnData = await response.json();
                 
                 // Parse values from JSON summary (removing any dollar signs/commas if they still exist)
-                const totalSavedStr = returnData.summary.totalSaved.toString().replace(/[^0-9.-]+/g, "");
-                const tudorCostStr = returnData.summary.tudorCost ? returnData.summary.tudorCost.toString().replace(/[^0-9.-]+/g, "") : "2550";
-                const gmtCostStr = returnData.summary.gmtCost ? returnData.summary.gmtCost.toString().replace(/[^0-9.-]+/g, "") : "5650";
-
-                const totalSaved = parseFloat(totalSavedStr) || 0;
-                let tudorCost = parseFloat(tudorCostStr) || 2550;
-                let gmtCost = parseFloat(gmtCostStr) || 5650;
-
-                // Ensure non-zero fallback
-                if (tudorCost === 0) tudorCost = 2550;
-                if (gmtCost === 0) gmtCost = 5650;
+                // The sheet's prices win; the defaults are used only if a price is missing or zero.
+                const totalSaved = parseAmount(returnData.summary.totalSaved);
+                const tudorCost = parseAmount(returnData.summary.tudorCost) || DEFAULT_TUDOR_1926_PRICE;
+                const gmtCost = parseAmount(returnData.summary.gmtCost) || DEFAULT_BB58_GMT_PRICE;
 
                 chartDataCache = { totalSaved, tudorCost, gmtCost };
 
