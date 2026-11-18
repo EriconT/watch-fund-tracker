@@ -1,4 +1,4 @@
-# Watch Fund Tracker ⌚️
+# On The Way To A Tudor ⌚️
 
 A lightweight, serverless web application designed to track and visualize savings progress toward two Tudor watch goals (Tudor 1926 and Tudor Black Bay 58 GMT) with a target completion date by the end of 2026. 
 
@@ -25,9 +25,10 @@ The tracker is built with a minimalist architecture using a serverless backend.
 
 ## ⚙️ Folder Structure
 
-The frontend repository only requires two files to function:
+The frontend repository only requires three files to function:
 - `index.html` - The main application code and API fetching logic.
 - `apple-touch-icon.png` - The custom icon for the iOS Home Screen.
+- `tudor.jpg` - The banner image at the top of the page.
 
 ## 🔄 How It's Maintained
 
