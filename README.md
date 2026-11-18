@@ -42,7 +42,11 @@ The frontend repository only requires three files to function:
 - `apple-touch-icon.png` - The custom icon for the iOS Home Screen.
 - `tudor.jpg` - The banner image at the top of the page.
 
-`apps-script/Auth.gs` is not served by the site. It's a copy of the passphrase check that runs in Google Apps Script.
+The `apps-script/` folder is not served by the site. It holds copies of the code that runs in Google Apps Script:
+- `Auth.gs` - the passphrase check.
+- `Code.gs` - reads, adds, edits and deletes entries in the sheet.
+
+After changing either file here, paste it into the Apps Script editor and redeploy (**Deploy → Manage deployments →** edit, **Version:** *New version*, **Deploy**).
 
 ## 🔄 How It's Maintained
 
